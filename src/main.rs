@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::net::UdpSocket;
-use std::io;
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::thread;
 
@@ -17,9 +17,10 @@ fn init_server_mode() -> std::io::Result<()> {
         let mut buf = [0; 10000];
         let (amt, src) = socket.recv_from(&mut buf)?;
 
-        clients.entry(src.ip()).or_insert(src);
-        let buf = &mut buf[..amt];
+        let client_key = format!("{}:{}", src.ip(), src.port());
+        clients.entry(client_key).or_insert(src);
 
+        let buf = &mut buf[..amt];
         println!(">> {:?}", String::from_utf8(buf.to_vec()).unwrap());
 
         for (ip, c) in &clients {
@@ -33,15 +34,20 @@ fn init_server_mode() -> std::io::Result<()> {
 }
 
 fn init_client_mode() -> std::io::Result<()> {
+    let username = client_input_username();
     let socket = Arc::new(UdpSocket::bind(CLIENT_ADDR)?);
-    let socket_ptr = socket.clone();
 
+    // send join message
+    let join_message = format!("{}: Has joined the channel", username);
+    socket.send_to(join_message.as_bytes(), DEST_ADDR)?;
+
+    let socket_ptr = socket.clone();
     thread::spawn(move || {
         init_client_listener(socket_ptr).unwrap();
     });
 
     loop {
-        let input = client_input();
+        let input = client_input(&username);
         socket.send_to(&input, DEST_ADDR)?;
     }
 }
@@ -57,15 +63,29 @@ fn init_client_listener(socket: Arc<UdpSocket>) -> std::io::Result<()> {
     }
 }
 
-fn client_input() -> Vec<u8> {
-    println!("Message input: ");
+fn client_input_username() -> String {
+    print!("Enter your username: ");
+    io::stdout().flush().unwrap();
+    
+    let mut buffer = String::new();
+    let stdin = io::stdin();
+    stdin.read_line(&mut buffer).unwrap();
+
+    buffer.trim().to_string()
+}
+
+fn client_input(username: &str) -> Vec<u8> {
+    print!(">: ");
+    io::stdout().flush().unwrap();
+
     let mut buffer = String::new();
     let stdin = io::stdin();
     stdin.read_line(&mut buffer).unwrap();
 
     let buffer = buffer.trim();
+    let res = format!("{}: {}", username, buffer);
 
-    buffer.to_string().into_bytes()
+    res.into_bytes()
 }
 
 fn initiate_cli() -> i32 {
