@@ -1,6 +1,10 @@
-# Rust UDP Chat
+# Recreating IRC from scratch with rust std lib and UDP
 
-A simple, for-fun UDP client-server application written in Rust. This project emphasizes using Rust's standard library for network communication without external dependencies. It allows multiple clients to join a chat and broadcast messages to each other in real-time.
+Created this purely for fun because it seemed fun to implement a chat server with the std library only and learning a bit about how UDP works.
+
+Setup tailscale with a friend(s) and enjoy sending messages on your own channel.
+
+**Everything following this line is chatgpt generated**
 
 ## Features
 
