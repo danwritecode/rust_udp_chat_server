@@ -1,26 +1,29 @@
+use std::collections::HashMap;
 use std::net::UdpSocket;
 use std::io;
 use std::sync::Arc;
 use std::thread;
 
 const DEST_ADDR:&str = "";
-const CLIENT_ADDR:&str = "127.0.0.1:34255";
+const CLIENT_ADDR:&str = "0.0.0.0:0";
 
 fn init_server_mode() -> std::io::Result<()> {
     println!("Now in server broadcast mode");
-    let mut clients = vec![];
+    let mut clients = HashMap::new();
+
     let socket = UdpSocket::bind(DEST_ADDR)?;
 
     loop {
         let mut buf = [0; 10000];
         let (amt, src) = socket.recv_from(&mut buf)?;
-        clients.push(src);
 
+        clients.entry(src.ip()).or_insert(src);
         let buf = &mut buf[..amt];
 
         println!(">> {:?}", String::from_utf8(buf.to_vec()).unwrap());
 
-        for c in &clients {
+        for (ip, c) in &clients {
+            println!("Broadcasting to ip: {}", ip);
             // only send the response to the clients that didn't send the message
             if c != &src {
                 socket.send_to(buf, c)?;
