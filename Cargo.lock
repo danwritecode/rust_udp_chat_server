@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "rust_udp_fun"
+name = "udp_toip"
 version = "0.1.0"
